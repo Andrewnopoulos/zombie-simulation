@@ -1,10 +1,12 @@
-var population
+var population;
+var graph;
 
 function setup()
 {
 	createCanvas(800, 700);
 
 	population = new Population();
+	graph = new Graph(0, 600, 800, 100);
 
 	for (var i = 0; i < 80; i++)
 	{
@@ -25,11 +27,20 @@ function draw()
 {
 	background(51);
 	population.run();
+	graph.updateValues(population.humans.length, population.zombies.length);
+	graph.displaySelf();
 }
 
 function mousePressed()
 {
-	population.addHuman(new Entity(createVector(mouseX, mouseY)));
+	if (graph.overBox(mouseX, mouseY))
+	{
+		graph.toggleVisibility();
+	}
+	else
+	{
+		population.addHuman(new Entity(createVector(mouseX, mouseY)));
+	}
 }
 
 function Population()
