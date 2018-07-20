@@ -2,16 +2,21 @@ var population
 
 function setup()
 {
-	createCanvas(640, 360);
+	createCanvas(800, 700);
 
 	population = new Population();
 
-	for (var i = 0; i < 50; i++)
+	for (var i = 0; i < 80; i++)
 	{
-		var h = new Entity(createVector(random(0, width/2), random(0, height)));
+		var h = new Entity(createVector(random(0, width), random(0, height)));
 		population.addHuman(h);
+	}
 
-		var z = new Entity(createVector(random(width/2, width), random(0, height)));
+	for (var i = 0; i < 5; i++)
+	{
+		var z = new Entity(createVector(random(0, width), random(0, height)));
+		z.maxSpeed = 1.3;
+		z.infected = true;
 		population.addZombie(z);
 	}
 }
@@ -35,6 +40,17 @@ function Population()
 
 Population.prototype.run = function()
 {
+	// add a random human somewhere in the map
+	if (this.humans.length < 60)
+	{
+		var timeBetweenSpawns = (this.humans.length * 2) + 100;
+		if (frameCount % timeBetweenSpawns == 0)
+		{
+			var h = new Entity(createVector(random(0, width), random(0, height)));
+			this.addHuman(h);
+		}
+	}
+
 	for (var i = 0; i < this.humans.length; i++)
 	{
 		this.humans[i].updateHuman(this.zombies);
@@ -42,8 +58,27 @@ Population.prototype.run = function()
 	}
 	for (var i = 0; i < this.zombies.length; i++)
 	{
-		this.zombies[i].updateZombie(this.humans);
+		this.zombies[i].updateZombie(this.humans, this.zombies);
 		this.zombies[i].borders();
+	}
+
+	for (var i = this.zombies.length-1; i >= 0; i--)
+	{
+		var z = this.zombies[i];
+		if (z.isDead())
+		{
+			this.zombies.splice(i, 1);
+		}
+	}
+
+	for (var i = this.humans.length-1; i >= 0; i--)
+	{
+		var h = this.humans[i];
+		if (h.infected)
+		{
+			this.addZombie(h);
+			this.humans.splice(i, 1);
+		}
 	}
 }
 
@@ -65,7 +100,9 @@ function Entity(position)
 	this.maxSpeed = 1.0;
 	this.maxForce = 0.05;
 	this.r = 2.0;
-	this.detectionRadius = 50;
+	this.detectionRadius = 100;
+	this.zombielifetime = 20;
+	this.infected = false;
 }
 
 Entity.prototype.borders = function()
@@ -76,11 +113,35 @@ Entity.prototype.borders = function()
 	if (this.position.y > height+this.r) this.position.y = -this.r;
 }
 
-// zombie update
-Entity.prototype.updateZombie = function(humans)
+Entity.prototype.isDead = function()
 {
+	return this.zombielifetime < 0;
+}
+
+Entity.prototype.bite = function(human)
+{
+	this.zombielifetime = 20;
+	
+	human.infected = true;
+	human.maxSpeed = 1.3;
+}
+
+// zombie update
+Entity.prototype.updateZombie = function(humans, zombies)
+{
+	// this.zombielifetime -= (1.0/frameRate());
+	if (frameCount % 60 == 0)
+	{
+		this.zombielifetime -= 1;
+	}
+
+	var sep = this.separate(zombies);
 	var fol = this.follow(humans);
 
+	sep.mult(1.5);
+	fol.mult(1.0);
+
+	this.applyForce(sep);
 	this.applyForce(fol);
 
 	this.update();
@@ -93,7 +154,11 @@ Entity.prototype.updateHuman = function(zombies)
 {
 	var avoid = this.avoid(zombies);
 
-	avoid.mult(1.5);
+	if (avoid.mag() == 0)
+	{
+		// console.log("Magnitude is zero");
+		this.applyForce(-this.velocity);
+	}
 
 	this.applyForce(avoid);
 
@@ -167,9 +232,46 @@ Entity.prototype.avoid = function(zombies)
 	return steer;
 }
 
+Entity.prototype.separate = function(zombies)
+{
+	var desiredSeparation = 5.0;
+	var steer = createVector(0,0);
+	var count = 0;
+
+	for (var i = 0; i < zombies.length; i++)
+	{
+		var d = p5.Vector.dist(this.position, zombies[i].position);
+
+		if (d > 0 && d < desiredSeparation)
+		{
+			var diff = p5.Vector.sub(this.position, zombies[i].position);
+			diff.normalize();
+			diff.div(d);
+			steer.add(diff);
+			count++;
+		}
+	}
+
+	if (count > 0)
+	{
+		steer.div(count);
+	}
+
+	if (steer.mag() > 0)
+	{
+		steer.normalize();
+		steer.mult(this.maxSpeed);
+		steer.sub(this.velocity);
+		steer.limit(this.maxForce);
+	}
+
+	return steer;
+}
+
 // find closest human and route towards them
 Entity.prototype.follow = function(humans)
 {
+	var infectionDist = 4;
 	var targetDist = 1000000;
 	var targetPos = createVector(0, 0);
 	for (var i = 0; i < humans.length; i++)
@@ -180,6 +282,11 @@ Entity.prototype.follow = function(humans)
 		{
 			targetPos = humans[i].position;
 			targetDist = d;
+		}
+
+		if (d < infectionDist)
+		{
+			this.bite(humans[i]);
 		}
 	}
 
