@@ -47,10 +47,14 @@ function Population()
 {
 	this.humans = [];
 	this.zombies = [];
+	this.humanTree = new Quadtree({x: 0, y: 0, width: 800, height: 700}, 100, 4);
+	this.zombieTree = new Quadtree({x: 0, y: 0, width: 800, height: 700}, 100, 4);
 }
 
 Population.prototype.run = function()
 {
+	this.humanTree.clear();
+	this.zombieTree.clear();
 	// add a random human somewhere in the map
 	if (this.humans.length < 60)
 	{
@@ -60,6 +64,16 @@ Population.prototype.run = function()
 			var h = new Entity(createVector(random(0, width), random(0, height)));
 			this.addHuman(h);
 		}
+	}
+
+	// populate quadtrees
+	for (var i = 0; i < this.humans.length; i++)
+	{
+		this.humanTree.insert(this.humans[i]);
+	}
+	for (var i = 0; i < this.zombies.length; i++)
+	{
+		this.zombieTree.insert(this.zombies[i]);
 	}
 
 	for (var i = 0; i < this.humans.length; i++)
@@ -106,10 +120,14 @@ Population.prototype.addZombie = function(z)
 function Entity(position)
 {
 	this.position = position.copy();
+	this.x = this.position.x;
+	this.y = this.position.y;
 	this.velocity = createVector(0, 0);
 	this.acceleration = createVector(0, 0);
 	this.maxSpeed = 1.0;
 	this.maxForce = 0.05;
+	this.width = 1;
+	this.height = 1;
 	this.r = 2.0;
 	this.detectionRadius = 100;
 	this.zombielifetime = 20;
@@ -183,6 +201,8 @@ Entity.prototype.update = function()
 	this.velocity.add(this.acceleration);
 	this.velocity.limit(this.maxspeed);
 	this.position.add(this.velocity);
+	this.x = this.position.x;
+	this.y = this.position.y;
 
 	this.acceleration.mult(0);
 }
@@ -213,7 +233,9 @@ Entity.prototype.avoid = function(zombies)
 	var steer = createVector(0, 0);
 	var count = 0;
 
-	for (var i = 0; i < zombies.length; i++)
+	var elements = population.zombieTree.retrieve(this);
+
+	for (var i = 0; i < elements; i++)
 	{
 		var d = p5.Vector.dist(this.position, zombies[i].position);
 
@@ -249,7 +271,9 @@ Entity.prototype.separate = function(zombies)
 	var steer = createVector(0,0);
 	var count = 0;
 
-	for (var i = 0; i < zombies.length; i++)
+	var elements = population.zombieTree.retrieve(this);
+
+	for (var i = 0; i < elements; i++)
 	{
 		var d = p5.Vector.dist(this.position, zombies[i].position);
 
@@ -285,7 +309,10 @@ Entity.prototype.follow = function(humans)
 	var infectionDist = 4;
 	var targetDist = 1000000;
 	var targetPos = createVector(0, 0);
-	for (var i = 0; i < humans.length; i++)
+
+	var elements = population.humanTree.retrieve(this);
+
+	for (var i = 0; i < elements; i++)
 	{
 		var d = p5.Vector.dist(this.position, humans[i].position);
 
