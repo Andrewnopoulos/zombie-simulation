@@ -43,6 +43,18 @@ function mousePressed()
 	}
 }
 
+function mouseDragged()
+{
+	if (graph.overBox(mouseX, mouseY))
+	{
+	}
+	else
+	{
+		newHuman = population.addHuman(new Entity(createVector(mouseX, mouseY)));
+		newHuman.velocity = createVector(random(-2, 2), random(-2, 2));
+	}
+}
+
 function Population()
 {
 	this.humans = [];
@@ -110,11 +122,13 @@ Population.prototype.run = function()
 Population.prototype.addHuman = function(h)
 {
 	this.humans.push(h);
+	return h;
 }
 
 Population.prototype.addZombie = function(z)
 {
 	this.zombies.push(z);
+	return z;
 }
 
 function Entity(position)
