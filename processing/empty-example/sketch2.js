@@ -1,21 +1,17 @@
 var population;
 var graph;
+var stats;
 
-var active;
+var debugDisplay = false;
 var activeObject;
-
-var averageHumanSearchSize = 0;
-var numberOfHumanSearches = 0;
-
-var averageZombieSearchSize = 0;
-var numberOfZombieSearches = 0;
 
 function setup()
 {
 	createCanvas(800, 700);
 
 	population = new Population();
-	graph = new Graph(0, 600, 800, 100);
+	graph = new Graph(0, 500, 800, 200);
+	stats = new Stats();
 
 	for (var i = 0; i < 80; i++)
 	{
@@ -35,7 +31,7 @@ function setup()
 function keyTyped()
 {
 	if (key === ' ')
-		active = ! active;
+		debugDisplay = ! debugDisplay;
 
 	return false;
 }
@@ -45,54 +41,34 @@ function draw()
 	background(51);
 	population.run();
 	graph.updateValues(population.humans.length, population.zombies.length);
-	graph.displaySelf();
-
-	if (active && activeObject)
+	
+	if (debugDisplay)
 	{
-		if (activeObject.infected)
+		graph.displaySelf();
+		if (activeObject)
 		{
-			drawQuadtree(population.zombieTree);
+			if (activeObject.infected)
+			{
+				drawQuadtree(population.zombieTree);
+			}
+			else
+			{
+				drawQuadtree(population.humanTree);
+			}
 		}
-		else
-		{
-			drawQuadtree(population.humanTree);
-		}
-	}
-
-	if (graph.visible)
-	{
-		textSize(12);
-		fill(255, 255, 255);
-		var zombieText = "Average Zombie search size: " + Math.round(averageZombieSearchSize) + " / " + population.zombies.length;
-		text(zombieText, 0, 10);
-		var humanText = "Average Human search size: " + Math.round(averageHumanSearchSize) + " / " + population.humans.length;
-		text(humanText, 0, 22);
+		stats.render();
 	}
 }
 
 function mousePressed()
 {
-	if (graph.overBox(mouseX, mouseY))
-	{
-		graph.toggleVisibility();
-	}
-	else
-	{
-		activeObject = population.getClosestTo(createVector(mouseX, mouseY));
-		// population.addHuman(new Entity(createVector(mouseX, mouseY)));
-	}
+	activeObject = population.getClosestTo(createVector(mouseX, mouseY));
 }
 
 function mouseDragged()
 {
-	if (graph.overBox(mouseX, mouseY))
-	{
-	}
-	else
-	{
-		newHuman = population.addHuman(new Entity(createVector(mouseX, mouseY)));
-		newHuman.velocity = createVector(random(-2, 2), random(-2, 2));
-	}
+	newHuman = population.addHuman(new Entity(createVector(mouseX, mouseY)));
+	newHuman.velocity = createVector(random(-1.5, 1.5), random(-1.5, 1.5));
 }
 
 var drawQuadtree = function( node )
@@ -181,10 +157,8 @@ Population.prototype.run = function()
 		this.zombieTree.insert(this.zombies[i]);
 	}
 
-	averageHumanSearchSize = 0;
-	numberOfHumanSearches = 0;
-	averageZombieSearchSize = 0;
-	numberOfZombieSearches = 0;
+	stats.reset();
+
 	for (var i = 0; i < this.humans.length; i++)
 	{
 		this.humans[i].updateHuman(this.zombies);
@@ -196,11 +170,7 @@ Population.prototype.run = function()
 		this.zombies[i].borders();
 	}
 
-	if (numberOfHumanSearches != 0)
-		averageHumanSearchSize = averageHumanSearchSize / numberOfHumanSearches;
-
-	if (numberOfZombieSearches != 0)
-		averageZombieSearchSize = averageZombieSearchSize / numberOfZombieSearches;
+	stats.average();
 
 	for (var i = this.zombies.length-1; i >= 0; i--)
 	{
@@ -356,9 +326,8 @@ Entity.prototype.avoid = function(zombies)
 
 	var elements = population.zombieTree.retrieve(this);
 
-	averageZombieSearchSize += elements.length;
-	numberOfZombieSearches++;
-
+	stats.addZombieDataPoint(elements.length);
+	
 	for (var i = 0; i < elements.length; i++)
 	{
 		var d = p5.Vector.dist(this.position, elements[i].position);
@@ -397,8 +366,7 @@ Entity.prototype.separate = function(zombies)
 
 	var elements = population.zombieTree.retrieve(this);
 
-	averageZombieSearchSize += elements.length;
-	numberOfZombieSearches++;
+	stats.addZombieDataPoint(elements.length);
 
 	for (var i = 0; i < elements.length; i++)
 	{
@@ -439,8 +407,7 @@ Entity.prototype.follow = function(humans)
 
 	var elements = population.humanTree.retrieve(this);
 
-	averageHumanSearchSize += elements.length;
-	numberOfHumanSearches++;
+	stats.addHumanDataPoint(elements.length);
 
 	for (var i = 0; i < elements.length; i++)
 	{

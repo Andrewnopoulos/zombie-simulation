@@ -10,13 +10,6 @@ function Graph(x, y, width, height)
 
     this.humanPop = [];
     this.zombiePop = [];
-
-    this.visible = true;
-}
-
-Graph.prototype.toggleVisibility = function()
-{
-    this.visible = ! this.visible;
 }
 
 Graph.prototype.overBox = function(inputX, inputY)
@@ -39,25 +32,12 @@ Graph.prototype.updateValues = function(newHumanVal, newZombieVal)
 
 Graph.prototype.displaySelf = function()
 {
-    if (! this.visible)
+    for (var i = 1; i < this.width; i++)
     {
-        noFill()
-        stroke(200);
-        rect(this.x, this.y, this.width, this.height);
-    }
-    else
-    {
-        fill(100);
-        noStroke();
-        rect(this.x, this.y, this.width, this.height);
+        stroke(color(0, 255, 0));
+        point(i, this.humanPop[i]);
 
-        for (var i = 1; i < this.width; i++)
-        {
-            stroke(color(0, 255, 0));
-            point(i, this.humanPop[i]);
-
-            stroke(color(255, 0, 0));
-            point(i, this.zombiePop[i]);
-        }
+        stroke(color(255, 0, 0));
+        point(i, this.zombiePop[i]);
     }
 }
