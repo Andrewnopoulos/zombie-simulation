@@ -4,6 +4,12 @@ var graph;
 var active;
 var activeObject;
 
+var averageHumanSearchSize = 0;
+var numberOfHumanSearches = 0;
+
+var averageZombieSearchSize = 0;
+var numberOfZombieSearches = 0;
+
 function setup()
 {
 	createCanvas(800, 700);
@@ -51,6 +57,16 @@ function draw()
 		{
 			drawQuadtree(population.humanTree);
 		}
+	}
+
+	if (graph.visible)
+	{
+		textSize(12);
+		fill(255, 255, 255);
+		var zombieText = "Average Zombie search size: " + Math.round(averageZombieSearchSize) + " / " + population.zombies.length;
+		text(zombieText, 0, 10);
+		var humanText = "Average Human search size: " + Math.round(averageHumanSearchSize) + " / " + population.humans.length;
+		text(humanText, 0, 22);
 	}
 }
 
@@ -165,6 +181,10 @@ Population.prototype.run = function()
 		this.zombieTree.insert(this.zombies[i]);
 	}
 
+	averageHumanSearchSize = 0;
+	numberOfHumanSearches = 0;
+	averageZombieSearchSize = 0;
+	numberOfZombieSearches = 0;
 	for (var i = 0; i < this.humans.length; i++)
 	{
 		this.humans[i].updateHuman(this.zombies);
@@ -175,6 +195,12 @@ Population.prototype.run = function()
 		this.zombies[i].updateZombie(this.humans, this.zombies);
 		this.zombies[i].borders();
 	}
+
+	if (numberOfHumanSearches != 0)
+		averageHumanSearchSize = averageHumanSearchSize / numberOfHumanSearches;
+
+	if (numberOfZombieSearches != 0)
+		averageZombieSearchSize = averageZombieSearchSize / numberOfZombieSearches;
 
 	for (var i = this.zombies.length-1; i >= 0; i--)
 	{
@@ -330,6 +356,9 @@ Entity.prototype.avoid = function(zombies)
 
 	var elements = population.zombieTree.retrieve(this);
 
+	averageZombieSearchSize += elements.length;
+	numberOfZombieSearches++;
+
 	for (var i = 0; i < elements.length; i++)
 	{
 		var d = p5.Vector.dist(this.position, elements[i].position);
@@ -367,6 +396,9 @@ Entity.prototype.separate = function(zombies)
 	var count = 0;
 
 	var elements = population.zombieTree.retrieve(this);
+
+	averageZombieSearchSize += elements.length;
+	numberOfZombieSearches++;
 
 	for (var i = 0; i < elements.length; i++)
 	{
@@ -406,6 +438,9 @@ Entity.prototype.follow = function(humans)
 	var targetPos = createVector(0, 0);
 
 	var elements = population.humanTree.retrieve(this);
+
+	averageHumanSearchSize += elements.length;
+	numberOfHumanSearches++;
 
 	for (var i = 0; i < elements.length; i++)
 	{
