@@ -1,6 +1,9 @@
 var population;
 var graph;
 
+var active;
+var activeObject;
+
 function setup()
 {
 	createCanvas(800, 700);
@@ -23,12 +26,32 @@ function setup()
 	}
 }
 
+function keyTyped()
+{
+	if (key === ' ')
+		active = ! active;
+
+	return false;
+}
+
 function draw()
 {
 	background(51);
 	population.run();
 	graph.updateValues(population.humans.length, population.zombies.length);
 	graph.displaySelf();
+
+	if (active && activeObject)
+	{
+		if (activeObject.infected)
+		{
+			drawQuadtree(population.zombieTree);
+		}
+		else
+		{
+			drawQuadtree(population.humanTree);
+		}
+	}
 }
 
 function mousePressed()
@@ -39,7 +62,8 @@ function mousePressed()
 	}
 	else
 	{
-		population.addHuman(new Entity(createVector(mouseX, mouseY)));
+		activeObject = population.getClosestTo(createVector(mouseX, mouseY));
+		// population.addHuman(new Entity(createVector(mouseX, mouseY)));
 	}
 }
 
@@ -55,12 +79,62 @@ function mouseDragged()
 	}
 }
 
+var drawQuadtree = function( node )
+{
+	var bounds = node.bounds;
+
+	console.log(node.nodes.length);
+
+	//no subnodes? draw the current node
+	if( node.nodes.length === 0 )
+	{
+		noFill()
+        stroke(color(255, 0, 0));
+        rect(bounds.x, bounds.y, bounds.width, bounds.height);
+	//has subnodes? drawQuadtree them!
+	}
+	else
+	{
+		for( var i=0;i<node.nodes.length;i=i+1 )
+		{
+			drawQuadtree( node.nodes[ i ] );
+		}
+	}
+};
+
 function Population()
 {
 	this.humans = [];
 	this.zombies = [];
-	this.humanTree = new Quadtree({x: 0, y: 0, width: 800, height: 700}, 100, 4);
-	this.zombieTree = new Quadtree({x: 0, y: 0, width: 800, height: 700}, 100, 4);
+	this.humanTree = new Quadtree({x: 0, y: 0, width: 800, height: 700}, 20, 4);
+	this.zombieTree = new Quadtree({x: 0, y: 0, width: 800, height: 700}, 20, 4);
+}
+
+Population.prototype.getClosestTo = function(position)
+{
+	var dist = 100000;
+	var tempObj;
+
+	// populate quadtrees
+	for (var i = 0; i < this.humans.length; i++)
+	{
+		var d = p5.Vector.dist(position, this.humans[i].position);
+		if (d < dist)
+		{
+			tempObj = this.humans[i];
+			dist = d;
+		}
+	}
+	for (var i = 0; i < this.zombies.length; i++)
+	{
+		var d = p5.Vector.dist(position, this.zombies[i].position);
+		if (d < dist)
+		{
+			tempObj = this.zombies[i];
+			dist = d;
+		}
+	}
+	return tempObj;
 }
 
 Population.prototype.run = function()
@@ -226,6 +300,10 @@ Entity.prototype.render = function(colour)
 	var theta = this.velocity.heading() + radians(90);
 	fill(colour);
 	stroke(200);
+	if (this == activeObject)
+	{
+		stroke(color(0, 0, 255));
+	}
 	push();
 	translate(this.position.x,this.position.y);
 	rotate(theta);
