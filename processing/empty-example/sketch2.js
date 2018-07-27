@@ -89,7 +89,10 @@ var drawQuadtree = function( node )
 	if( node.nodes.length === 0 )
 	{
 		noFill()
-        stroke(color(255, 0, 0));
+		if (activeObject.infected)
+			stroke(color(255, 0, 0));
+		else
+			stroke(color(0, 255, 0));
         rect(bounds.x, bounds.y, bounds.width, bounds.height);
 	//has subnodes? drawQuadtree them!
 	}
