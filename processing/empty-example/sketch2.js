@@ -101,8 +101,8 @@ function Population()
 {
 	this.humans = [];
 	this.zombies = [];
-	this.humanTree = new Quadtree({x: 0, y: 0, width: 800, height: 700}, 20, 4);
-	this.zombieTree = new Quadtree({x: 0, y: 0, width: 800, height: 700}, 20, 4);
+	this.humanTree = new Quadtree({x: 0, y: 0, width: 800, height: 700}, 40, 4);
+	this.zombieTree = new Quadtree({x: 0, y: 0, width: 800, height: 700}, 40, 4);
 }
 
 Population.prototype.getClosestTo = function(position)
@@ -213,8 +213,8 @@ function Entity(position)
 	this.acceleration = createVector(0, 0);
 	this.maxSpeed = 1.0;
 	this.maxForce = 0.05;
-	this.width = 1;
-	this.height = 1;
+	this.width = 5;
+	this.height = 5;
 	this.r = 2.0;
 	this.detectionRadius = 100;
 	this.zombielifetime = 20;
