@@ -2,12 +2,12 @@ var planets = [];
 
 var planetCount = 3;
 
-var g = 100;
-var thrustConstant = 0.0005;
+var g = 300000;
+var thrustConstant = 50;
 
 var ship;
 
-var dt;
+var dt = 0;
 
 var mouseDown = false;
 var mouseInitialPosition = {x: 0, y: 0};
@@ -17,8 +17,6 @@ function setup()
 	createCanvas(800, 700);
 
 	frameRate(60);
-
-	dt = 1 / frameRate();
 
 	respawnShip();
 
@@ -36,6 +34,8 @@ function respawnShip()
 function draw()
 {
 	background(0);
+
+	dt = 1 / frameRate();
 
 	for (var i = 0; i < planets.length; i++)
 	{
@@ -65,7 +65,7 @@ function Ship(position)
 	this.colour = color(130);
 	this.wallColour = color(255);
 	this.rocketColour = color(255, 128, 32);
-	this.r = 3.0;
+	this.r = 4.0;
 	this.thrusting = false;
 }
 
@@ -103,11 +103,11 @@ Ship.prototype.gravitate = function()
 
 	if (this.thrusting)
 	{
-		acceleration.add(this.thrustVector);
+		acceleration.add(this.thrustVector.copy().mult(dt));
 	}
 
 	this.velocity.add(acceleration.mult(dt));
-	this.position.add(this.velocity.mult(dt));
+	this.position.add(this.velocity.copy().mult(dt));
 }
 
 Ship.prototype.render = function() {
