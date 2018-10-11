@@ -20,12 +20,17 @@ function setup()
 
 	dt = 1 / frameRate();
 
-	ship = new Ship(createVector(width/2, height/2));
+	respawnShip();
 
 	for (var i = 0; i < planetCount; i++)
 	{
 		planets.push(new Planet(createVector(random(0, width), random(0, height)), random(10, 50)));
 	}
+}
+
+function respawnShip()
+{
+	ship = new Ship(createVector(width/2, height/2));
 }
 
 function draw()
@@ -60,7 +65,7 @@ function Ship(position)
 	this.colour = color(130);
 	this.wallColour = color(255);
 	this.rocketColour = color(255, 128, 32);
-	this.r = 30.0;
+	this.r = 3.0;
 	this.thrusting = false;
 }
 
@@ -85,6 +90,11 @@ Ship.prototype.gravitate = function()
 	for (var i = 0; i < planets.length; i++)
 	{
 		var vectorToPlanet = planets[i].position.copy().sub(this.position.copy());
+		distanceFromPlanet = vectorToPlanet.mag();
+		if (distanceFromPlanet < planets[i].radius/1.5)
+		{
+			respawnShip();
+		}
 		var gravityForce = g / vectorToPlanet.magSq();
 		vectorToPlanet.normalize();
 		vectorToPlanet.mult(gravityForce);
