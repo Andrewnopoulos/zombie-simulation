@@ -1,6 +1,6 @@
 var planets = [];
 
-var planetCount = 3;
+var planetCount = 4;
 
 var g = 300000;
 var thrustConstant = 50;
@@ -11,6 +11,12 @@ var dt = 0;
 
 var mouseDown = false;
 var mouseInitialPosition = {x: 0, y: 0};
+
+var vectorDimensions = {x: 80, y: 70};
+
+var vectorField = [];
+
+var renderVectorField = true;
 
 function setup()
 {
@@ -23,6 +29,60 @@ function setup()
 	for (var i = 0; i < planetCount; i++)
 	{
 		planets.push(new Planet(createVector(random(0, width), random(0, height)), random(10, 50)));
+	}
+
+	calculateVectorFields();
+}
+
+function calculateVectorFields()
+{
+	vectorField = new Array(vectorDimensions.x);
+	for (var i = 0; i < vectorDimensions.x; i++)
+	{
+		vectorField[i] = new Array(vectorDimensions.y);
+	}
+
+	for (var x = 0; x < vectorDimensions.x; x++)
+	{
+		for (var y = 0; y < vectorDimensions.y; y++)
+		{
+			var position = createVector(width * x / vectorDimensions.x, height * y / vectorDimensions.y);
+
+			var acceleration = createVector(0, 0);
+
+			for (var i = 0; i < planets.length; i++)
+			{
+				var vectorToPlanet = planets[i].position.copy().sub(position.copy());
+				distanceFromPlanet = vectorToPlanet.mag();
+				var gravityForce = g / vectorToPlanet.magSq();
+				vectorToPlanet.normalize();
+				vectorToPlanet.mult(gravityForce);
+				acceleration.add(vectorToPlanet);
+			}
+
+			magnitude = acceleration.mag();
+			if (magnitude > 70)
+			{
+				acceleration.setMag(70);
+			}
+
+			vectorField[x][y] = acceleration.mult(0.05);
+		}
+	}
+}
+
+function drawVectorField()
+{
+	for (var x = 0; x < vectorDimensions.x; x++)
+	{
+		for (var y = 0; y < vectorDimensions.y; y++)
+		{
+			var position = createVector(width * x / vectorDimensions.x, height * y / vectorDimensions.y);
+
+			stroke(128);
+			strokeWeight(1);
+			line(position.x, position.y, position.x+vectorField[x][y].x, position.y+vectorField[x][y].y);
+		}
 	}
 }
 
@@ -43,6 +103,11 @@ function draw()
 	}
 
 	ship.update();
+
+	if (renderVectorField)
+	{
+		drawVectorField();
+	}
 }
 
 function mousePressed()
