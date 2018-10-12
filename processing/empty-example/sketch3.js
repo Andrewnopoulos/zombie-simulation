@@ -16,7 +16,7 @@ var vectorDimensions = {x: 80, y: 70};
 
 var vectorField = [];
 
-var renderVectorField = true;
+var renderVectorField = false;
 
 function setup()
 {
