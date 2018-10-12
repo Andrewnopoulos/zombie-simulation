@@ -115,11 +115,19 @@ function mousePressed()
 	mouseInitialPosition.x = mouseX;
 	mouseInitialPosition.y = mouseY;
 	mouseDown = true;
+
+	return false;
+}
+
+function mouseDragged()
+{
+	return false;
 }
 
 function mouseReleased()
 {
 	mouseDown = false;
+	return false;
 }
 
 function Ship(position)
